@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Number Sprint</title>
+<style>
+html, body { margin: 0; min-height: 100%; }
+body {
+    background: #eef2f7;
+    color: #0f172a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+}
+.ns-page { max-width: 520px; margin: 0 auto; padding: 10px 10px 28px; }
+
+.ns-titlebar { display: flex; align-items: baseline; gap: 10px; margin: 2px 6px 0; }
+.ns-title { font-size: 20px; font-weight: 700; }
+.ns-subtitle { font-size: 12px; opacity: 0.65; }
+.ns-help { margin: 14px 6px 0; font-size: 14px; }
+.ns-help > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.ns-help ol { margin: 8px 0; padding-left: 22px; }
+.ns-help li { margin: 6px 0; line-height: 1.45; }
+.ns-help h4 { margin: 12px 0 2px; font-size: 14px; }
+.ns-closing { font-size: 12px; opacity: 0.65; text-align: center; margin: 16px 10px 0; line-height: 1.5; }
+
+.ns-primary-btn {
+    border: 0;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 13px 34px;
+    min-height: 48px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    touch-action: manipulation;
+    font-family: inherit;
+}
+.ns-primary-btn:active { transform: scale(0.96); }
+.ns-ghost-btn {
+    border: 0;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 40px;
+    cursor: pointer;
+    touch-action: manipulation;
+    font-family: inherit;
+}
+
+/* Number Sprint game panel */
+.ns-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    padding: 12px;
+    margin: 8px auto 0;
+    max-width: 480px;
+    background: linear-gradient(155deg, #0d9488 0%, #2563eb 55%, #7c3aed 100%);
+    color: #fff;
+}
+.ns-hud { display: flex; gap: 6px; align-items: stretch; flex-wrap: wrap; }
+.ns-chip {
+    flex: 1 1 0;
+    min-width: 50px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 999px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.ns-chip-label { font-size: 11px; color: #475569; }
+.ns-chip-value { font-size: 15px; font-weight: 600; color: #1e293b; }
+.ns-chip-value.ns-anim { animation: ns-pop 0.25s ease-out; display: inline-block; }
+.ns-chip[data-hot] { background: #fef3c7; box-shadow: 0 0 0 2px #fbbf24 inset; }
+.ns-sound {
+    border: 0;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 32px;
+    cursor: pointer;
+    touch-action: manipulation;
+    font-family: inherit;
+}
+.ns-stage { margin-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+.ns-level-big { font-size: 34px; font-weight: 800; line-height: 1.1; text-align: center; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25); }
+.ns-ready-title { font-size: 20px; font-weight: 600; text-align: center; }
+.ns-ready-text { margin: 0; font-size: 13px; line-height: 19px; text-align: center; color: rgba(255, 255, 255, 0.9); }
+.ns-ready-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.ns-ready-chips span { background: rgba(255, 255, 255, 0.18); border-radius: 999px; padding: 3px 10px; font-size: 11px; }
+.ns-level-picker { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.ns-level-chip {
+    border: 0;
+    border-radius: 999px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    touch-action: manipulation;
+    font-family: inherit;
+}
+.ns-level-chip[data-sel] { background: #fff; color: #1e293b; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25); }
+
+.ns-call { width: 100%; text-align: center; }
+.ns-call-number { font-size: 52px; font-weight: 700; line-height: 1.1; animation: ns-pop 0.25s ease-out; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25); }
+.ns-call-number[data-turbo] { color: #e9d5ff; text-shadow: 0 0 18px rgba(168, 85, 247, 0.8); }
+.ns-call-meta { font-size: 12px; color: rgba(255, 255, 255, 0.85); margin-top: 0; min-height: 16px; }
+.ns-turbo-badge { color: #d8b4fe; font-weight: 700; }
+.ns-bonus-badge { color: #fcd34d; font-weight: 700; }
+.ns-miss-badge { color: #fca5a5; font-weight: 700; }
+.ns-timer { margin-top: 6px; height: 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+.ns-timer-fill { height: 100%; border-radius: 999px; background: #fbbf24; transition: width 0.1s linear; }
+.ns-timer-fill[data-turbo] { background: #a855f7; }
+.ns-timer-fill[data-low] { background: #ef4444; }
+
+.ns-board { position: relative; width: 100%; display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+.ns-board.is-shaking { animation: ns-boardshake 0.5s ease-in-out 2; }
+.ns-tile {
+    position: relative;
+    aspect-ratio: 1;
+    border: 0;
+    border-radius: 14px;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    min-height: 44px;
+    transition: transform 0.08s ease-out;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    font-family: inherit;
+}
+.ns-tile:active { transform: scale(0.94); }
+.ns-c0 { background: #ffe4ec; color: #d6336c; }
+.ns-c1 { background: #dbeafe; color: #1d4ed8; }
+.ns-c2 { background: #e2e8f0; color: #64748b; }
+.ns-c3 { background: #fef3c7; color: #b45309; }
+.ns-c4 { background: #dcfce7; color: #15803d; }
+.ns-tile.is-bonus { box-shadow: 0 0 0 3px #fbbf24 inset, 0 0 12px rgba(251, 191, 36, 0.55); }
+.ns-tile.is-bonus::after { content: '\2605'; position: absolute; top: 2px; right: 6px; font-size: 12px; color: #d97706; }
+.ns-tile.is-tapped { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #fff; animation: ns-pop 0.25s ease-out; cursor: default; }
+.ns-tile.is-missed { background: rgba(241, 245, 249, 0.35); color: rgba(255, 255, 255, 0.45); cursor: default; }
+.ns-tile.is-wrong { animation: ns-shake 0.4s ease-out; box-shadow: 0 0 0 3px #ef4444 inset; }
+.ns-tile.is-line { animation: ns-flash 0.7s ease-out 2; }
+
+.ns-shake-banner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+    background: rgba(88, 28, 135, 0.35);
+    border-radius: 14px;
+    animation: ns-pop 0.3s ease-out;
+    pointer-events: none;
+    z-index: 3;
+}
+.ns-float {
+    position: absolute;
+    top: -6px;
+    right: 4px;
+    color: #fbbf24;
+    font-size: 24px;
+    font-weight: 700;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    animation: ns-rise 0.9s ease-out forwards;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.ns-count {
+    font-size: 84px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    animation: ns-countpop 0.6s ease-out;
+    min-height: 96px;
+}
+.ns-board.is-dim { opacity: 0.55; filter: saturate(0.8); }
+.ns-board.is-dim .ns-tile { cursor: default; }
+.ns-fire {
+    align-self: center;
+    background: linear-gradient(90deg, #f97316, #ef4444);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 4px 16px;
+    animation: ns-firepulse 0.8s ease-in-out infinite;
+    box-shadow: 0 2px 14px rgba(239, 68, 68, 0.55);
+}
+.ns-panel[data-fire] .ns-tile:not(.is-tapped):not(.is-missed) { box-shadow: 0 0 10px rgba(249, 115, 22, 0.5); }
+.ns-panel[data-fire] .ns-tile.is-bonus { box-shadow: 0 0 0 3px #fbbf24 inset, 0 0 12px rgba(251, 191, 36, 0.55); }
+.ns-multpop {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 72px;
+    font-weight: 800;
+    color: #fbbf24;
+    text-shadow: 0 3px 16px rgba(0, 0, 0, 0.45);
+    animation: ns-popfade 0.9s ease-out forwards;
+    pointer-events: none;
+    z-index: 4;
+}
+.ns-newbest {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: fit-content;
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    color: #78350f;
+    font-size: 15px;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 6px 18px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    animation: ns-popfade 1.7s ease-out forwards;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 4;
+}
+.ns-float-hot { color: #fb7185; font-size: 18px; right: auto; left: 6px; }
+.ns-rank {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+    animation: ns-pop 0.35s ease-out;
+    text-shadow: 0 3px 16px rgba(0, 0, 0, 0.35);
+}
+.ns-rank[data-rank='S'] { color: #fbbf24; text-shadow: 0 0 24px rgba(251, 191, 36, 0.75); }
+.ns-rank[data-rank='A'] { color: #4ade80; }
+.ns-rank[data-rank='B'] { color: #60a5fa; }
+.ns-rank[data-rank='C'] { color: #c4b5fd; }
+.ns-rank[data-rank='D'] { color: rgba(255, 255, 255, 0.75); }
+
+.ns-end-failed { color: #fecaca; }
+.ns-newbest-final {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    color: #78350f;
+    font-size: 17px;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 6px 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    animation: ns-pop 0.35s ease-out;
+}
+.ns-final-score { font-size: 44px; font-weight: 700; line-height: 1; }
+.ns-final-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 100%; }
+.ns-final-grid > div { background: rgba(255, 255, 255, 0.92); border-radius: 12px; padding: 8px; text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.ns-final-label { font-size: 12px; color: #475569; }
+.ns-final-value { font-size: 18px; font-weight: 600; color: #1e293b; }
+.ns-end-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+.ns-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+.ns-confetti span { position: absolute; top: -16px; width: 8px; height: 14px; border-radius: 2px; animation: ns-fall 1.3s ease-in forwards; }
+
+@keyframes ns-pop { 0% { transform: scale(0.6); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes ns-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+@keyframes ns-boardshake { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-6px, 3px); } 40% { transform: translate(6px, -3px); } 60% { transform: translate(-5px, -3px); } 80% { transform: translate(5px, 3px); } }
+@keyframes ns-flash { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+@keyframes ns-rise { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-40px); } }
+@keyframes ns-fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(560px) rotate(420deg); opacity: 0; } }
+@keyframes ns-countpop { 0% { transform: scale(1.6); opacity: 0; } 40% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.95); opacity: 1; } }
+@keyframes ns-popfade { 0% { transform: scale(0.6); opacity: 0; } 25% { transform: scale(1.08); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.02); opacity: 0; } }
+@keyframes ns-firepulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
+@media (min-width: 768px) {
+    .ns-call-number { font-size: 64px; }
+    .ns-tile { font-size: 22px; }
+    .ns-panel { padding: 16px; border-radius: 24px; }
+    .ns-stage { margin-top: 14px; gap: 14px; }
+    .ns-ready-title { font-size: 24px; }
+    .ns-ready-text { font-size: 14px; line-height: 22px; }
+    .ns-rank { font-size: 84px; }
+    .ns-final-score { font-size: 56px; }
+    .ns-count { font-size: 96px; min-height: 118px; }
+}
+</style>
+</head>
+<body>
+<main class="ns-page">
+    <div class="ns-titlebar">
+        <span class="ns-title">Number Sprint</span>
+        <span class="ns-subtitle">Free &middot; solo &middot; no sign-up</span>
+    </div>
+
+    <section class="ns-panel" id="panel">
+        <div class="ns-confetti" id="confetti" hidden></div>
+        <div class="ns-hud">
+            <div class="ns-chip"><span class="ns-chip-label">Level</span><span class="ns-chip-value" id="hudLevel">1</span></div>
+            <div class="ns-chip"><span class="ns-chip-label">Score</span><span class="ns-chip-value" id="hudScore">0</span></div>
+            <div class="ns-chip"><span class="ns-chip-label">Lines</span><span class="ns-chip-value" id="hudLines">0/12</span></div>
+            <div class="ns-chip"><span class="ns-chip-label">&#9733;</span><span class="ns-chip-value" id="hudStars">0</span></div>
+            <div class="ns-chip" id="multChip"><span class="ns-chip-label">Mult</span><span class="ns-chip-value" id="hudMult">&times;1</span></div>
+            <button type="button" class="ns-sound" id="soundBtn">Sound on</button>
+        </div>
+        <div class="ns-stage" id="stage"></div>
+        <p class="ns-ready-text" id="bestCaption" style="margin:8px 0 0;font-size:11px;opacity:0.8;"></p>
+    </section>
+
+    <details class="ns-help">
+        <summary>How to play and scoring</summary>
+        <h4>How to play</h4>
+        <ol>
+            <li>Tap Start level. After a 3-2-1 countdown your grid fills with the numbers 1 to 25 in a random order, and 3 tiles turn golden.</li>
+            <li>A number is called at the top. Find it on your grid and tap it before the fuse empties.</li>
+            <li>Clear every call in the level to unlock the next one. You can miss at most 2 calls; a 3rd miss fails the level and you retry it.</li>
+            <li>Each level adds more calls and a shorter fuse: level 1 starts with 10 calls and a 10-second fuse, later levels run up to 25 calls with the fuse tightening to 4 seconds.</li>
+            <li>Correct taps in a row build a multiplier, up to &times;5. Every 7th call is a turbo call: a short fuse and double points. An 8-tap streak puts you on fire. Every 6 calls, the unmarked tiles shake into new positions.</li>
+        </ol>
+        <h4>Scoring</h4>
+        <ol>
+            <li>Correct tap: (100 points plus 10 per second left) &times; your multiplier.</li>
+            <li>Multiplier: grows by one every 4 correct taps in a row, up to &times;5. A wrong tap or a missed call resets it.</li>
+            <li>Turbo call, every 7th: a short fuse, and the tap pays double.</li>
+            <li>Golden tile: +150 points and +1 star when you tap it as the called number.</li>
+            <li>Line complete: +250 points and +1 star. 12 lines in all: 5 rows, 5 columns, 2 diagonals.</li>
+            <li>Wrong tap: &minus;25 points and the fuse loses 1 second. Missed call: the tile dims.</li>
+            <li>Clean sweep, all 25 numbers tapped with no misses: +500 points.</li>
+            <li>Your rank (D to S) follows your total score across cleared levels: S from 18000, A from 12000, B from 7000, C from 3000.</li>
+        </ol>
+    </details>
+    <p class="ns-closing"><strong>Made by BrainJoy Games</strong><br>A solo number-chase game: no account, no purchases, nothing to install. Cleared levels and your best score save on this device.</p>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    var SIZE = 5;
+    var TILES = SIZE * SIZE;
+    var MAX_MULT = 5;
+    var FIRE_STREAK = 8;
+    var MAX_MISS = 2; // a 3rd missed call fails the level
+
+    var LINES = [];
+    for (var r = 0; r < SIZE; r++) LINES.push([0, 1, 2, 3, 4].map(function (c) { return r * SIZE + c; }));
+    for (var c = 0; c < SIZE; c++) LINES.push([0, 1, 2, 3, 4].map(function (rr) { return rr * SIZE + c; }));
+    LINES.push([0, 6, 12, 18, 24], [4, 8, 12, 16, 20]);
+
+    // Level difficulty: more calls and a shorter fuse each level.
+    function callsFor(level) { return Math.min(25, 8 + 2 * level); }
+    function baseFuse(level) { return Math.max(4000, 10500 - 500 * level); }
+    function fuseFor(idx, turbo, level) {
+        var n = Math.max(3000, baseFuse(level) - 250 * idx);
+        return turbo ? Math.max(2500, Math.floor(n * 0.5)) : n;
+    }
+
+    function shuffled(count) {
+        var a = [];
+        for (var i = 0; i < count; i++) a.push(i + 1);
+        for (var j = a.length - 1; j > 0; j--) {
+            var k = Math.floor(Math.random() * (j + 1));
+            var t = a[j]; a[j] = a[k]; a[k] = t;
+        }
+        return a;
+    }
+
+    function shuffledValues(values) {
+        var a = values.slice();
+        for (var j = a.length - 1; j > 0; j--) {
+            var k = Math.floor(Math.random() * (j + 1));
+            var t = a[j]; a[j] = a[k]; a[k] = t;
+        }
+        return a;
+    }
+
+    function rankFor(score) {
+        if (score >= 18000) return 'S';
+        if (score >= 12000) return 'A';
+        if (score >= 7000) return 'B';
+        if (score >= 3000) return 'C';
+        return 'D';
+    }
+
+    var audioCtx = null;
+    function tone(freq, dur, type, vol, delay) {
+        try {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            audioCtx = audioCtx || new AC();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            var t0 = audioCtx.currentTime + (delay || 0);
+            var o = audioCtx.createOscillator();
+            var g = audioCtx.createGain();
+            o.type = type;
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, t0);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.start(t0);
+            o.stop(t0 + dur);
+        } catch (e) { /* sound is optional decoration */ }
+    }
+
+    // Progress + best score: localStorage when the browser allows it, memory otherwise.
+    var store = null;
+    try {
+        window.localStorage.setItem('__ns_test', '1');
+        window.localStorage.removeItem('__ns_test');
+        store = window.localStorage;
+    } catch (e) { store = null; }
+    var BEST_KEY = 'number-sprint-best.v4';
+    var LEVEL_KEY = 'number-sprint-level.v4';
+    function loadBest() {
+        if (!store) return 0;
+        var v = parseInt(store.getItem(BEST_KEY) || '0', 10);
+        return isNaN(v) ? 0 : v;
+    }
+    function loadLevel() {
+        if (!store) return 1;
+        var v = parseInt(store.getItem(LEVEL_KEY) || '1', 10);
+        return isNaN(v) || v < 1 ? 1 : v;
+    }
+    function saveProgress() {
+        if (!store) return;
+        try {
+            store.setItem(BEST_KEY, String(S.best));
+            store.setItem(LEVEL_KEY, String(S.unlocked));
+        } catch (e) { /* ignore */ }
+    }
+
+    var panel = document.getElementById('panel');
+    var stage = document.getElementById('stage');
+    var confettiEl = document.getElementById('confetti');
+    var hudLevel = document.getElementById('hudLevel');
+    var hudScore = document.getElementById('hudScore');
+    var hudLines = document.getElementById('hudLines');
+    var hudStars = document.getElementById('hudStars');
+    var hudMult = document.getElementById('hudMult');
+    var multChip = document.getElementById('multChip');
+    var soundBtn = document.getElementById('soundBtn');
+    var bestCaption = document.getElementById('bestCaption');
+
+    var S = {
+        phase: 'ready',
+        level: 1,
+        unlocked: 1,
+        total: 0,
+        levelScore: 0,
+        board: [],
+        calls: [],
+        callIdx: 0,
+        tapped: new Set(),
+        missed: new Set(),
+        bonus: new Set(),
+        linesDone: new Set(),
+        stars: 0,
+        streak: 0,
+        remaining: 10000,
+        fuse: 10000,
+        deadline: 0,
+        soundOn: true,
+        best: 0,
+        madeNewBest: false,
+        bestShown: false,
+        tickTimer: null,
+        countdownTimer: null
+    };
+    S.best = loadBest();
+    S.unlocked = loadLevel();
+    S.level = S.unlocked;
+
+    var tileBtns = [];
+    var boardEl = null;
+    var callNumEl = null;
+    var callMetaEl = null;
+    var callBoxEl = null;
+    var timerFillEl = null;
+    var countEl = null;
+    var fireEl = null;
+
+    function callsThisLevel() { return callsFor(S.level); }
+    function isTurboCall(idx) { return (idx + 1) % 7 === 0; }
+    function turbo() { return S.phase === 'playing' && isTurboCall(S.callIdx); }
+    function mult() { return Math.min(MAX_MULT, 1 + Math.floor(S.streak / 4)); }
+    function current() { return S.phase === 'playing' ? S.calls[S.callIdx] : null; }
+    function liveScore() { return S.total + (S.phase === 'playing' || S.phase === 'countdown' ? S.levelScore : 0); }
+
+    bestCaption.textContent = store
+        ? 'Cleared levels and best score save on this device in this browser.'
+        : 'Cleared levels and best score last while this page stays open.';
+
+    function updateHUD() {
+        hudLevel.textContent = S.level;
+        hudScore.textContent = liveScore();
+        hudLines.textContent = S.linesDone.size + '/12';
+        hudStars.textContent = S.stars;
+        var m = mult();
+        hudMult.textContent = '\u00d7' + m;
+        if (m > 1) multChip.setAttribute('data-hot', ''); else multChip.removeAttribute('data-hot');
+        var onFire = S.phase === 'playing' && S.streak >= FIRE_STREAK;
+        if (onFire) panel.setAttribute('data-fire', ''); else panel.removeAttribute('data-fire');
+        if (fireEl) {
+            fireEl.hidden = !onFire;
+            if (onFire) fireEl.textContent = 'On fire \u00b7 streak ' + S.streak;
+        }
+    }
+
+    function clearTimers() {
+        if (S.tickTimer) { window.clearInterval(S.tickTimer); S.tickTimer = null; }
+        if (S.countdownTimer) { window.clearInterval(S.countdownTimer); S.countdownTimer = null; }
+    }
+
+    function goalText(level) {
+        return 'Clear ' + callsFor(level) + ' calls with at most ' + MAX_MISS + ' misses. Fuse starts at ' + Math.round(baseFuse(level) / 100) / 10 + 's and keeps shrinking.';
+    }
+
+    function renderReady() {
+        S.phase = 'ready';
+        clearTimers();
+        var chips = '';
+        for (var n = 1; n <= S.unlocked; n++) {
+            chips += '<button type="button" class="ns-level-chip" data-level="' + n + '"' + (n === S.level ? ' data-sel' : '') + '>' + n + '</button>';
+        }
+        stage.innerHTML =
+            '<div class="ns-level-big">Level ' + S.level + '</div>' +
+            '<p class="ns-ready-text">' + goalText(S.level) + '</p>' +
+            '<div class="ns-ready-chips"><span>5\u00d75 grid</span><span>Shrinking fuse</span><span>Turbo \u00d72</span><span>Grid shakes</span><span>Ranks D\u2013S</span></div>' +
+            (S.unlocked > 1 ? '<div class="ns-level-picker">' + chips + '</div>' : '') +
+            '<button type="button" class="ns-primary-btn" id="startBtn">Start level ' + S.level + '</button>';
+        Array.prototype.forEach.call(stage.querySelectorAll('.ns-level-chip'), function (chip) {
+            chip.addEventListener('click', function () {
+                S.level = parseInt(chip.getAttribute('data-level'), 10);
+                renderReady();
+            });
+        });
+        document.getElementById('startBtn').addEventListener('click', start);
+        updateHUD();
+    }
+
+    function renderPlayStage() {
+        stage.innerHTML =
+            '<div class="ns-fire" id="fireBadge" role="status" hidden></div>' +
+            '<div class="ns-count" id="countEl">3</div>' +
+            '<div class="ns-call" id="callBox" hidden>' +
+                '<div class="ns-call-number" id="callNum"></div>' +
+                '<div class="ns-call-meta" id="callMeta"></div>' +
+                '<div class="ns-timer"><div class="ns-timer-fill" id="timerFill"></div></div>' +
+            '</div>' +
+            '<div class="ns-board is-dim" id="board"></div>';
+        boardEl = document.getElementById('board');
+        callNumEl = document.getElementById('callNum');
+        callMetaEl = document.getElementById('callMeta');
+        callBoxEl = document.getElementById('callBox');
+        timerFillEl = document.getElementById('timerFill');
+        countEl = document.getElementById('countEl');
+        fireEl = document.getElementById('fireBadge');
+        tileBtns = [];
+        for (var i = 0; i < TILES; i++) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'ns-tile ns-c' + (i % 5);
+            b.disabled = true;
+            b.addEventListener('click', function (e) {
+                tap(parseInt(e.currentTarget.dataset.value, 10));
+            });
+            boardEl.appendChild(b);
+            tileBtns.push(b);
+        }
+        syncBoard();
+    }
+
+    function syncBoard(flashSet) {
+        for (var i = 0; i < TILES; i++) {
+            var v = S.board[i];
+            var b = tileBtns[i];
+            b.dataset.value = v;
+            b.textContent = v;
+            var cls = 'ns-tile ns-c' + (i % 5);
+            if (S.tapped.has(v)) cls += ' is-tapped';
+            if (S.missed.has(v)) cls += ' is-missed';
+            if (S.bonus.has(v) && !S.tapped.has(v) && !S.missed.has(v)) cls += ' is-bonus';
+            if (flashSet && flashSet.has(i)) cls += ' is-line';
+            b.className = cls;
+            b.disabled = S.phase !== 'playing' || S.tapped.has(v) || S.missed.has(v);
+        }
+    }
+
+    function start() {
+        S.bonus = new Set(shuffled(TILES).slice(0, 3));
+        S.board = shuffled(TILES);
+        S.calls = shuffled(TILES).slice(0, callsThisLevel());
+        S.callIdx = 0;
+        S.tapped = new Set();
+        S.missed = new Set();
+        S.linesDone = new Set();
+        S.levelScore = 0;
+        S.stars = 0;
+        S.streak = 0;
+        S.remaining = baseFuse(S.level);
+        S.madeNewBest = false;
+        S.bestShown = false;
+        clearTimers();
+        S.phase = 'countdown';
+        renderPlayStage();
+        updateHUD();
+        if (S.soundOn) tone(520, 0.09, 'sine', 0.04);
+        var c = 3;
+        S.countdownTimer = window.setInterval(function () {
+            c -= 1;
+            if (c <= 0) {
+                window.clearInterval(S.countdownTimer);
+                S.countdownTimer = null;
+                countEl.hidden = true;
+                boardEl.classList.remove('is-dim');
+                callBoxEl.hidden = false;
+                S.phase = 'playing';
+                syncBoard();
+                beginCall(0);
+                if (S.soundOn) tone(880, 0.12, 'sine', 0.05);
+            } else {
+                countEl.textContent = c;
+                countEl.style.animation = 'none';
+                void countEl.offsetWidth;
+                countEl.style.animation = '';
+                if (S.soundOn) tone(520, 0.09, 'sine', 0.04);
+            }
+        }, 650);
+    }
+
+    function updateCallDisplay() {
+        var idx = S.callIdx;
+        var v = S.calls[idx];
+        var t = isTurboCall(idx);
+        callNumEl.textContent = v;
+        callNumEl.style.animation = 'none';
+        void callNumEl.offsetWidth;
+        callNumEl.style.animation = '';
+        if (t) callNumEl.setAttribute('data-turbo', ''); else callNumEl.removeAttribute('data-turbo');
+        updateMeta();
+        timerFillEl.style.width = '100%';
+        if (t) timerFillEl.setAttribute('data-turbo', ''); else timerFillEl.removeAttribute('data-turbo');
+        timerFillEl.removeAttribute('data-low');
+    }
+
+    function updateMeta() {
+        var idx = S.callIdx;
+        var v = S.calls[idx];
+        var secondsLeft = Math.max(0, Math.ceil(S.remaining / 1000));
+        var meta = '';
+        if (isTurboCall(idx)) meta += '<span class="ns-turbo-badge">TURBO \u00d72 \u00b7 </span>';
+        if (S.bonus.has(v)) meta += '<span class="ns-bonus-badge">\u2605 bonus tile \u00b7 </span>';
+        if (S.missed.size > 0) meta += '<span class="ns-miss-badge">misses ' + S.missed.size + '/' + MAX_MISS + ' \u00b7 </span>';
+        meta += secondsLeft + 's \u00b7 number ' + (idx + 1) + ' of ' + S.calls.length;
+        callMetaEl.innerHTML = meta;
+    }
+
+    function beginCall(idx) {
+        if (idx >= S.calls.length) { clearLevel(); return; }
+        S.callIdx = idx;
+        if (idx > 0 && idx % 6 === 0) gridShake();
+        var t = isTurboCall(idx);
+        S.fuse = fuseFor(idx, t, S.level);
+        S.deadline = Date.now() + S.fuse;
+        S.remaining = S.fuse;
+        updateCallDisplay();
+        updateHUD();
+        if (t && S.soundOn) tone(880, 0.07, 'square', 0.03);
+        if (S.tickTimer) window.clearInterval(S.tickTimer);
+        S.tickTimer = window.setInterval(function () {
+            var rem = S.deadline - Date.now();
+            S.remaining = rem;
+            if (rem <= 0) {
+                onTimeout();
+                return;
+            }
+            var pct = Math.max(0, Math.min(100, (rem / S.fuse) * 100));
+            timerFillEl.style.width = pct + '%';
+            if (rem <= Math.min(3000, S.fuse * 0.35)) timerFillEl.setAttribute('data-low', ''); else timerFillEl.removeAttribute('data-low');
+            updateMeta();
+        }, 100);
+    }
+
+    function gridShake() {
+        var locked = new Set();
+        S.tapped.forEach(function (v) { locked.add(v); });
+        S.missed.forEach(function (v) { locked.add(v); });
+        var freeIdx = [];
+        for (var i = 0; i < TILES; i++) if (!locked.has(S.board[i])) freeIdx.push(i);
+        var freeVals = shuffledValues(freeIdx.map(function (i) { return S.board[i]; }));
+        var next = S.board.slice();
+        freeIdx.forEach(function (pos, k) { next[pos] = freeVals[k]; });
+        S.board = next;
+        syncBoard();
+        boardEl.classList.add('is-shaking');
+        var banner = document.createElement('div');
+        banner.className = 'ns-shake-banner';
+        banner.textContent = 'Grid shake!';
+        boardEl.appendChild(banner);
+        if (S.soundOn) tone(130, 0.3, 'sawtooth', 0.035);
+        window.setTimeout(function () {
+            if (boardEl) boardEl.classList.remove('is-shaking');
+            if (banner.parentNode) banner.parentNode.removeChild(banner);
+        }, 1300);
+    }
+
+    function pushFloater(text, hot) {
+        if (!boardEl) return;
+        var f = document.createElement('div');
+        f.className = 'ns-float' + (hot ? ' ns-float-hot' : '');
+        f.textContent = text;
+        boardEl.appendChild(f);
+        window.setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 950);
+    }
+
+    function onTimeout() {
+        if (S.tickTimer) { window.clearInterval(S.tickTimer); S.tickTimer = null; }
+        var value = S.calls[S.callIdx];
+        S.missed.add(value);
+        S.streak = 0;
+        if (S.soundOn) tone(220, 0.18, 'triangle', 0.04);
+        syncBoard();
+        updateHUD();
+        if (S.missed.size > MAX_MISS) { failLevel(); return; }
+        beginCall(S.callIdx + 1);
+    }
+
+    function tap(value) {
+        if (S.phase !== 'playing') return;
+        if (S.tapped.has(value) || S.missed.has(value)) return;
+        var cur = current();
+        if (cur === null) return;
+        if (value === cur) {
+            if (S.tickTimer) { window.clearInterval(S.tickTimer); S.tickTimer = null; }
+            var remMs = Math.max(0, S.deadline - Date.now());
+            var m = mult();
+            var t = turbo();
+            var base = (100 + Math.round(remMs / 1000) * 10) * m * (t ? 2 : 1);
+            var isBonus = S.bonus.has(value);
+            var gain = base + (isBonus ? 150 : 0);
+            S.tapped.add(value);
+            var justDone = [];
+            LINES.forEach(function (line, li) {
+                if (S.linesDone.has(li)) return;
+                var done = line.every(function (i) { return S.tapped.has(S.board[i]); });
+                if (done) { S.linesDone.add(li); justDone.push(li); }
+            });
+            var cleanSweep = S.tapped.size === TILES;
+            var linePoints = justDone.length * 250 + (cleanSweep ? 500 : 0);
+            var totalGain = gain + linePoints;
+            S.levelScore += totalGain;
+            S.stars += (isBonus ? 1 : 0) + justDone.length;
+            S.streak += 1;
+            pushFloater('+' + totalGain);
+            if (remMs < 2000) pushFloater('close!', true);
+            var newMult = Math.min(MAX_MULT, 1 + Math.floor(S.streak / 4));
+            if (newMult > m) {
+                var pop = document.createElement('div');
+                pop.className = 'ns-multpop';
+                pop.textContent = '\u00d7' + newMult + '!';
+                boardEl.appendChild(pop);
+                window.setTimeout(function () { if (pop.parentNode) pop.parentNode.removeChild(pop); }, 900);
+                if (S.soundOn) { tone(660, 0.09, 'sine', 0.05); tone(990, 0.14, 'sine', 0.05, 0.09); }
+            }
+            if (!S.bestShown && S.best > 0 && liveScore() > S.best) {
+                S.bestShown = true;
+                S.madeNewBest = true;
+                var nb = document.createElement('div');
+                nb.className = 'ns-newbest';
+                nb.textContent = 'New best!';
+                boardEl.appendChild(nb);
+                window.setTimeout(function () { if (nb.parentNode) nb.parentNode.removeChild(nb); }, 1700);
+                if (S.soundOn) { tone(784, 0.1, 'sine', 0.05); tone(1175, 0.18, 'sine', 0.05, 0.1); }
+            }
+            if (justDone.length > 0) {
+                var flashSet = new Set();
+                justDone.forEach(function (li) { LINES[li].forEach(function (i) { flashSet.add(i); }); });
+                syncBoard(flashSet);
+                burstConfetti();
+                if (S.soundOn) { tone(523, 0.09, 'sine', 0.05); tone(659, 0.09, 'sine', 0.05, 0.08); tone(880, 0.14, 'sine', 0.05, 0.16); }
+                window.setTimeout(function () { if (S.phase === 'playing') syncBoard(); }, 1400);
+            } else {
+                syncBoard();
+                if (S.soundOn) tone(680 + Math.min(S.streak, 14) * 30, 0.08, 'sine', 0.045);
+            }
+            updateHUD();
+            beginCall(S.callIdx + 1);
+        } else {
+            S.levelScore = Math.max(0, S.levelScore - 25);
+            S.streak = 0;
+            S.deadline -= 1000;
+            var btn = null;
+            for (var i = 0; i < tileBtns.length; i++) {
+                if (parseInt(tileBtns[i].dataset.value, 10) === value) { btn = tileBtns[i]; break; }
+            }
+            if (btn) {
+                btn.classList.add('is-wrong');
+                window.setTimeout(function () { btn.classList.remove('is-wrong'); }, 600);
+            }
+            if (S.soundOn) tone(160, 0.2, 'square', 0.03);
+            updateHUD();
+        }
+    }
+
+    function burstConfetti() {
+        confettiEl.innerHTML = '';
+        var colors = ['#fbbf24', '#f472b6', '#60a5fa', '#34d399', '#a78bfa'];
+        for (var i = 0; i < 30; i++) {
+            var s = document.createElement('span');
+            s.style.left = ((i * 37 + 11) % 100) + '%';
+            s.style.animationDelay = ((i * 53) % 380) + 'ms';
+            s.style.background = colors[i % 5];
+            confettiEl.appendChild(s);
+        }
+        confettiEl.hidden = false;
+        window.setTimeout(function () { confettiEl.hidden = true; confettiEl.innerHTML = ''; }, 1600);
+    }
+
+    function statsGrid() {
+        return '<div class="ns-final-grid">' +
+            '<div><span class="ns-final-label">Level score</span><span class="ns-final-value">' + S.levelScore + '</span></div>' +
+            '<div><span class="ns-final-label">Lines</span><span class="ns-final-value">' + S.linesDone.size + '/12</span></div>' +
+            '<div><span class="ns-final-label">Stars</span><span class="ns-final-value">\u2605 ' + S.stars + '</span></div>' +
+            '<div><span class="ns-final-label">Hits</span><span class="ns-final-value">' + S.tapped.size + '/' + S.calls.length + '</span></div>' +
+        '</div>';
+    }
+
+    function clearLevel() {
+        S.phase = 'cleared';
+        clearTimers();
+        S.total += S.levelScore;
+        var isUnlock = S.level === S.unlocked;
+        if (isUnlock) S.unlocked = S.level + 1;
+        if (S.total > S.best) {
+            S.best = S.total;
+            S.madeNewBest = true;
+        }
+        saveProgress();
+        var rank = rankFor(S.total);
+        stage.innerHTML =
+            '<div class="ns-ready-title">Level ' + S.level + ' cleared!</div>' +
+            '<div class="ns-rank" data-rank="' + rank + '">' + rank + '</div>' +
+            (S.madeNewBest ? '<div class="ns-newbest-final">New best!</div>' : '') +
+            statsGrid() +
+            '<div class="ns-final-grid" style="grid-template-columns:1fr 1fr;">' +
+                '<div><span class="ns-final-label">Total score</span><span class="ns-final-value">' + S.total + '</span></div>' +
+                '<div><span class="ns-final-label">Best</span><span class="ns-final-value">' + S.best + '</span></div>' +
+            '</div>' +
+            '<div class="ns-end-btns">' +
+                '<button type="button" class="ns-primary-btn" id="nextLevelBtn">Next: level ' + (S.level + 1) + '</button>' +
+                '<button type="button" class="ns-ghost-btn" id="levelsBtn">Levels</button>' +
+            '</div>';
+        document.getElementById('nextLevelBtn').addEventListener('click', function () {
+            S.level = S.level + 1;
+            start();
+        });
+        document.getElementById('levelsBtn').addEventListener('click', renderReady);
+        teardownPlayRefs();
+        if (S.linesDone.size > 0) burstConfetti();
+        if (S.soundOn) { tone(523, 0.12, 'sine', 0.05); tone(659, 0.12, 'sine', 0.05, 0.1); tone(784, 0.12, 'sine', 0.05, 0.2); tone(1046, 0.22, 'sine', 0.05, 0.3); }
+        updateHUD();
+    }
+
+    function failLevel() {
+        S.phase = 'failed';
+        clearTimers();
+        stage.innerHTML =
+            '<div class="ns-ready-title ns-end-failed">Level ' + S.level + ' failed</div>' +
+            '<p class="ns-ready-text">3 calls missed. The fuse only gets shorter from here, so keep your streak alive.</p>' +
+            statsGrid() +
+            '<div class="ns-end-btns">' +
+                '<button type="button" class="ns-primary-btn" id="retryBtn">Retry level ' + S.level + '</button>' +
+                '<button type="button" class="ns-ghost-btn" id="levelsBtn">Levels</button>' +
+            '</div>';
+        document.getElementById('retryBtn').addEventListener('click', start);
+        document.getElementById('levelsBtn').addEventListener('click', renderReady);
+        teardownPlayRefs();
+        if (S.soundOn) tone(160, 0.4, 'square', 0.035);
+        updateHUD();
+    }
+
+    function teardownPlayRefs() {
+        boardEl = null;
+        callNumEl = null;
+        callMetaEl = null;
+        callBoxEl = null;
+        timerFillEl = null;
+        countEl = null;
+        fireEl = null;
+    }
+
+    soundBtn.addEventListener('click', function () {
+        S.soundOn = !S.soundOn;
+        soundBtn.textContent = S.soundOn ? 'Sound on' : 'Sound off';
+    });
+
+    renderReady();
+
+    // Exposed for automated playtesting; not used by the game UI.
+    window.__NS = S;
+})();
+</script>
+</body>
+</html>
